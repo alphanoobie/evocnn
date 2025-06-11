@@ -52,98 +52,70 @@ class Evaluate:
             pickle.dump(pop_list, file_handler)
 
 
-    def build_graph(self, indi_index, num_of_input_channel, indi, train_dataset, validate_dataset):
-        is_training = tf.placeholder(tf.bool, [])
-        X = tf.cond(is_training, lambda:train_data, lambda:validate_data)
-        y_ = tf.cond(is_training, lambda:train_label, lambda:validate_label)
-        true_Y = tf.cast(y_, tf.int64)
+    def build_graph(individual, input_shape=(28, 28, 1), num_classes=2):
+        """
+        Build a Keras model from an Individual object.
 
-        name_preffix = 'I_{}'.format(indi_index)
-        num_of_units = indi.get_layer_size()
+        Args:
+            individual: An Individual instance containing CNN architecture.
+            input_shape: Input shape for the model (e.g., (28, 28, 1) for MNIST).
+            num_classes: Number of output classes.
 
-        ################# variable for convolution operation#######################################
-        last_output_feature_map_size = num_of_input_channel
-        ############### state the connection numbers################################################
-        num_connections = 0
-        ############################################################################################
-        output_list = []
-        output_list.append(X)
-        with slim.arg_scope([slim.conv2d, slim.fully_connected],
-                        activation_fn=tf.nn.crelu,
-                        normalizer_fn=slim.batch_norm,
-                        #weights_regularizer=slim.l2_regularizer(0.005),
-                        normalizer_params={'is_training': is_training, 'decay': 0.99}):
+        Returns:
+            model: A compiled tf.keras.Model.
+        """
+        model_layers = []
+        current_shape = input_shape
 
-            for i in range(num_of_units):
-                current_unit = indi.get_layer_at(i)
-                if current_unit.type == 1:
-                    name_scope = '{}_conv_{}'.format(name_preffix, i)
-                    with tf.variable_scope(name_scope):
-                        filter_size = [current_unit.filter_width, current_unit.filter_height]
-                        mean=current_unit.weight_matrix_mean
-                        stddev=current_unit.weight_matrix_std
-                        conv_H = slim.conv2d(output_list[-1], current_unit.feature_map_size, filter_size, weights_initializer=tf.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
-                        output_list.append(conv_H)
-                        # update for next usage
-                        last_output_feature_map_size = current_unit.feature_map_size
-                        num_connections += current_unit.feature_map_size*current_unit.filter_width*current_unit.filter_height+current_unit.feature_map_size
-                elif current_unit.type == 2:
-                    with tf.variable_scope('{}_pool_{}'.format(name_preffix, i)):
-                        kernel_size = [current_unit.kernel_width, current_unit.kernel_height]
-                        if current_unit.kernel_type < 0.5:
-                            pool_H = slim.max_pool2d(output_list[-1], kernel_size=kernel_size, stride=kernel_size, padding='SAME')
-                        else:
-                            pool_H = slim.avg_pool2d(output_list[-1], kernel_size=kernel_size, stride=kernel_size, padding='SAME')
-                        output_list.append(pool_H)
-                        # pooling operation does not change the number of channel size, but channge the output size
-                        last_output_feature_map_size = last_output_feature_map_size
-                        num_connections += last_output_feature_map_size
-                elif current_unit.type == 3:
-                    with tf.variable_scope('{}_full_{}'.format(name_preffix, i)):
-                        last_unit = indi.get_layer_at(i-1)
-                        if last_unit.type != 3: # use the previous setting to calculate this input dimension
-                            input_data =  slim.flatten(output_list[-1])
-                            input_dim = input_data.get_shape()[1].value
-                        else: # current input dim should be the number of neurons in the previous hidden layer
-                            input_data = output_list[-1]
-                            input_dim = last_unit.hidden_neuron_num
-                        mean=current_unit.weight_matrix_mean
-                        stddev=current_unit.weight_matrix_std
-                        if i < num_of_units - 1:
-                            full_H = slim.fully_connected(input_data, num_outputs=current_unit.hidden_neuron_num, weights_initializer=tf.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
-                        else:
-                            full_H = slim.fully_connected(input_data, num_outputs=current_unit.hidden_neuron_num, activation_fn=None, weights_initializer=tf.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
-                        output_list.append(full_H)
-                        num_connections += input_dim*current_unit.hidden_neuron_num + current_unit.hidden_neuron_num
-                else:
-                    raise NameError('No unit with type value {}'.format(current_unit.type))
+        for unit in individual.indi:
+            if unit.type == 1:  # ConvLayer
+                filters = unit.feature_map_size
+                kernel_size = (unit.filter_width, unit.filter_height)
+                conv = layers.Conv2D(
+                    filters=filters,
+                    kernel_size=kernel_size,
+                    padding='same',
+                    activation='relu',
+                    kernel_initializer=tf.keras.initializers.RandomNormal(
+                        mean=unit.weight_matrix_mean,
+                        stddev=unit.weight_matrix_std
+                    )
+                )
+                model_layers.append(conv)
 
+            elif unit.type == 2:  # PoolLayer
+                pool = layers.MaxPooling2D(
+                    pool_size=(unit.kernel_width, unit.kernel_height),
+                    strides=(unit.kernel_width, unit.kernel_height),
+                    padding='same'
+                )
+                model_layers.append(pool)
 
-            with tf.name_scope('{}_loss'.format(name_preffix)):
-                logits = output_list[-1]
-                #regularization_loss = tf.add_n(tf.losses.get_regularization_losses())
-                cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_Y, logits=logits))
-            with tf.name_scope('{}_train'.format(name_preffix)):
-                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-                if update_ops:
-                    updates = tf.group(*update_ops)
-                    cross_entropy = control_flow_ops.with_dependencies([updates], cross_entropy)
-                #global_step = tf.get_variable("global_step", [], initializer=tf.constant_initializer(0.0), trainable=False)
-                #self.train_data_length//self.batch_size
-#                 lr = tf.train.exponential_decay(0.1, step, 550*30, 0.9, staircase=True)
-#                 optimizer = tf.train.GradientDescentOptimizer(lr)
-                optimizer = tf.train.AdamOptimizer()
-                train_op = slim.learning.create_train_op(cross_entropy, optimizer)
-            with tf.name_scope('{}_test'.format(name_preffix)):
-                accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(logits, 1), true_Y), tf.float32))
+            elif unit.type == 3:  # FullLayer
+                model_layers.append(layers.Flatten())
+                model_layers.append(layers.Dense(
+                    unit.hidden_neuron_num,
+                    activation='relu',
+                    kernel_initializer=tf.keras.initializers.RandomNormal(
+                        mean=unit.weight_matrix_mean,
+                        stddev=unit.weight_matrix_std
+                    )
+                ))
 
-            tf.summary.scalar('loss', cross_entropy)
-            tf.summary.scalar('accuracy', accuracy)
-            merge_summary = tf.summary.merge_all()
+        # Final classification layer
+        model_layers.append(layers.Dense(num_classes, activation='softmax'))
 
-            return is_training, train_op, accuracy, cross_entropy, num_connections, merge_summary
+        # Assemble the model
+        model = models.Sequential([layers.Input(shape=input_shape)] + model_layers)
 
+        # Compile (You can modify optimizer and loss based on evolution)
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(),
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+        )
 
+        return model
 
     def parse_individual(self, indi, num_of_input_channel, indi_index, save_path, history_best_score):
         train_dataset = get_data.get_train_data(self.batch_size)
