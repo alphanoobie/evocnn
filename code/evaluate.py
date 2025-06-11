@@ -5,8 +5,6 @@ from tensorflow.python.ops import init_ops
 from population import Population
 from individual import Individual
 import numpy as np
-import collections
-import timeit
 import os
 import pickle
 import utils
@@ -34,7 +32,8 @@ class Evaluate:
     '''
     def parse_population(self, gen_no):
         save_dir = os.getcwd() + '/save_data/gen_{:03d}'.format(gen_no)
-        tf.gfile.MakeDirs(save_dir)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         history_best_score = 0
         for i in range(self.pops.get_pop_size()):
             indi = self.pops.get_individual_at(i)
