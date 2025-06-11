@@ -53,7 +53,7 @@ class Evaluate:
             pickle.dump(pop_list, file_handler)
 
     @staticmethod
-    def build_graph(individual, input_shape=(28, 28, 1), num_classes=2):
+    def build_graph(individual, input_shape=(28, 28, 1), num_classes=10):
         """
         Build a Keras model from an Individual object.
 
@@ -67,6 +67,7 @@ class Evaluate:
         """
         model_layers = []
         current_shape = input_shape
+        flatten_added = False 
 
         for unit in individual.indi:
             if unit.type == 1:  # ConvLayer
@@ -93,18 +94,26 @@ class Evaluate:
                 model_layers.append(pool)
 
             elif unit.type == 3:  # FullLayer
-                model_layers.append(layers.Flatten())
-                model_layers.append(layers.Dense(
+                # Add Flatten only once before first Dense layer
+                if not flatten_added:
+                    model_layers.append(layers.Flatten())
+                    flatten_added = True
+
+                dense = layers.Dense(
                     unit.hidden_neuron_num,
                     activation='relu',
                     kernel_initializer=tf.keras.initializers.RandomNormal(
                         mean=unit.weight_matrix_mean,
                         stddev=unit.weight_matrix_std
                     )
-                ))
+                )
+                model_layers.append(dense)
+
+        if not flatten_added:
+            model_layers.append(layers.Flatten())
 
         # Final classification layer
-        model_layers.append(layers.Dense(num_classes, activation='softmax'))
+        model_layers.append(layers.Dense(10, activation='softmax'))
 
         # Assemble the model
         model = models.Sequential([layers.Input(shape=input_shape)] + model_layers)
@@ -119,64 +128,48 @@ class Evaluate:
         return model
 
     def parse_individual(self, indi, num_of_input_channel, indi_index, save_path, history_best_score):
-        train_dataset = get_data.get_train_data(self.batch_size)
-        validate_dataset = get_data.get_validate_data(self.batch_size)
-        is_training, train_op, accuracy, cross_entropy, num_connections, merge_summary = self.build_graph(indi_index, num_of_input_channel, indi, train_dataset, validate_dataset)
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            steps_in_each_epoch = (self.train_data_length//self.batch_size)
-            total_steps = int(self.epochs*steps_in_each_epoch)
-            coord = tf.train.Coordinator()
-            #threads = tf.train.start_queue_runners(sess, coord)
-            try:
-                threads = []
-                for qr in tf.get_collection(tf.GraphKeys.QUEUE_RUNNERS):
-                    threads.extend(qr.create_threads(sess, coord=coord, daemon=True, start=True))
-                for i in range(total_steps):
-                    if coord.should_stop():
-                        break
-                    _, accuracy_str, loss_str, _ = sess.run([train_op, accuracy,cross_entropy, merge_summary], {is_training:True})
-                    if i % (2*steps_in_each_epoch) == 0:
-                        test_total_step = self.validate_data_length//self.batch_size
-                        test_accuracy_list = []
-                        test_loss_list = []
-                        for _ in range(test_total_step):
-                            test_accuracy_str, test_loss_str = sess.run([accuracy, cross_entropy], {is_training:False})
-                            test_accuracy_list.append(test_accuracy_str)
-                            test_loss_list.append(test_loss_str)
-                        mean_test_accu = np.mean(test_accuracy_list)
-                        mean_test_loss = np.mean(test_loss_list)
-                        print('{}, {}, indi:{}, Step:{}/{}, train_loss:{}, acc:{}, test_loss:{}, acc:{}'.format(datetime.now(), i // steps_in_each_epoch, indi_index, i, total_steps, loss_str, accuracy_str, mean_test_loss, mean_test_accu))
-                        #print('{}, test_loss:{}, acc:{}'.format(datetime.now(), loss_str, accuracy_str))
-                #validate the last epoch
-                test_total_step = self.validate_data_length//self.batch_size
-                test_accuracy_list = []
-                test_loss_list = []
-                for _ in range(test_total_step):
-                    test_accuracy_str, test_loss_str = sess.run([accuracy, cross_entropy], {is_training:False})
-                    test_accuracy_list.append(test_accuracy_str)
-                    test_loss_list.append(test_loss_str)
-                mean_test_accu = np.mean(test_accuracy_list)
-                mean_test_loss = np.mean(test_loss_list)
-                print('{}, test_loss:{}, acc:{}'.format(datetime.now(), mean_test_loss, mean_test_accu))
-                mean_acc = mean_test_accu
-                if mean_acc > history_best_score:
-                    save_mean_acc = tf.Variable(-1, dtype=tf.float32, name='save_mean')
-                    save_mean_acc_op = save_mean_acc.assign(mean_acc)
-                    sess.run(save_mean_acc_op)
-                    saver0 = tf.train.Saver()
-                    saver0.save(sess, save_path +'/model')
-                    saver0.export_meta_graph(save_path +'/model.meta')
-                    history_best_score = mean_acc
+    # Build Keras model from individual
+        input_shape = (28, 28, num_of_input_channel)  # adjust if needed
+        num_classes = 2  # adjust if needed
+        
+        model = self.build_graph(indi, input_shape=input_shape, num_classes=num_classes)
 
-            except Exception as e:
-                print(e)
-                coord.request_stop(e)
-            finally:
-                print('finally...')
-                coord.request_stop()
-                coord.join(threads)
+        # Prepare data: assuming train_data and validate_data are numpy arrays or tf.data.Dataset
+        # Make sure your train_data/train_label and validate_data/validate_label are accessible here
+        # Using self.train_data, self.train_label, self.validate_data, self.validate_label
 
-            return mean_test_accu, np.std(test_accuracy_list), num_connections, history_best_score
+        # Train the model
 
+        print("Train data type:", type(self.train_data))
+        print("Train label type:", type(self.train_label))
+        print("Validate data type:", type(self.validate_data))
+        print("Validate label type:", type(self.validate_label))
+        print("Train data shape:", getattr(self.train_data, 'shape', None))
+        print("Train label shape:", getattr(self.train_label, 'shape', None))
+        print("Validate data shape:", getattr(self.validate_data, 'shape', None))
+        print("Validate label shape:", getattr(self.validate_label, 'shape', None))
+
+        history = model.fit(
+            self.train_data,
+            batch_size=self.batch_size,
+            epochs=self.epochs,
+            validation_data= self.validate_data,
+            verbose=2
+        )
+
+        # Evaluate model on validation set
+        val_loss, val_acc = model.evaluate(self.validate_data, batch_size=self.batch_size, verbose=0)
+
+        print(f"Individual {indi_index} - Validation accuracy: {val_acc:.4f}, Validation loss: {val_loss:.4f}")
+
+        # Save model if improved
+        if val_acc > history_best_score:
+            model.save(save_path + '/model.h5')
+            history_best_score = val_acc
+
+        # You can define 'num_connections' complexity based on individual properties (dummy here)
+        num_connections = sum(unit.feature_map_size if hasattr(unit, 'feature_map_size') else 0 for unit in indi.indi)
+
+        # Return mean accuracy, std (use 0 if you want), complexity, new best score
+        return val_acc, 0.0, num_connections, history_best_score
 

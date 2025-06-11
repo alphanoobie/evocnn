@@ -3,6 +3,7 @@ from utils import *
 import tensorflow as tf
 import logging
 import os
+from get_data import get_train_data, get_validate_data
 
 def begin_evolve(m_prob, m_eta, x_prob, x_eta, pop_size, train_data, train_label, validate_data, validation_label, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta):
     cnn = Evolve_CNN(m_prob, m_eta, x_prob, x_eta, pop_size, train_data, train_label, validate_data, validation_label, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, eta)
@@ -34,7 +35,7 @@ if __name__ == '__main__':
     if not os.path.exists('./save_data'):
         os.mkdir('./save_data')
 
-    #train_data, validation_data, test_data = get_mnist_data()
+    
     batch_size = 100
     number_of_channel = 1
     train_data_length = 10000
@@ -43,8 +44,11 @@ if __name__ == '__main__':
     pop_size = 50
     epochs = 10
     eta = 1/20
+
+    train_ds = get_train_data(batch_size)
+    validate_ds = get_validate_data(batch_size)
     #CUDA1
-    begin_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
+    begin_evolve(0.9, 0.05, 0.2, 0.05, pop_size, train_ds, None, validate_ds, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
     #restart_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
 
 
