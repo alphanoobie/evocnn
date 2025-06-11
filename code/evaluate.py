@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.keras import layers, models
 import tf_slim as slim
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import init_ops
@@ -51,7 +52,7 @@ class Evaluate:
         with open(list_save_path, 'wb') as file_handler:
             pickle.dump(pop_list, file_handler)
 
-
+    @staticmethod
     def build_graph(individual, input_shape=(28, 28, 1), num_classes=2):
         """
         Build a Keras model from an Individual object.

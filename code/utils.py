@@ -2,7 +2,6 @@ import numpy as np
 import os
 import pickle
 from time import gmtime, strftime
-from population import *
 from individual import *
 
 def get_data_path():
