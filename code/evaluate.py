@@ -52,7 +52,7 @@ class Evaluate:
             pickle.dump(pop_list, file_handler)
 
 
-    def build_graph(self, indi_index, num_of_input_channel, indi, train_data, train_label, validate_data, validate_label):
+    def build_graph(self, indi_index, num_of_input_channel, indi, train_dataset, validate_dataset):
         is_training = tf.placeholder(tf.bool, [])
         X = tf.cond(is_training, lambda:train_data, lambda:validate_data)
         y_ = tf.cond(is_training, lambda:train_label, lambda:validate_label)
@@ -146,10 +146,9 @@ class Evaluate:
 
 
     def parse_individual(self, indi, num_of_input_channel, indi_index, save_path, history_best_score):
-        tf.reset_default_graph()
-        train_data, train_label = get_data.get_train_data(self.batch_size)
-        validate_data, validate_label = get_data.get_validate_data(self.batch_size)
-        is_training, train_op, accuracy, cross_entropy, num_connections, merge_summary = self.build_graph(indi_index, num_of_input_channel, indi, train_data, train_label, validate_data, validate_label)
+        train_dataset = get_data.get_train_data(self.batch_size)
+        validate_dataset = get_data.get_validate_data(self.batch_size)
+        is_training, train_op, accuracy, cross_entropy, num_connections, merge_summary = self.build_graph(indi_index, num_of_input_channel, indi, train_dataset, validate_dataset)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             steps_in_each_epoch = (self.train_data_length//self.batch_size)
