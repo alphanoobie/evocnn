@@ -147,7 +147,7 @@ class Evolve_CNN:
                 unit_p2.filter_width = int(n_w2)
                 unit_p2.filter_height = int(n_w2)
                 #feature map size
-                this_range = p1.featur_map_size_range
+                this_range = p1.feature_map_size_range
                 s1 = unit_p1.feature_map_size
                 s2 = unit_p2.feature_map_size
                 n_s1, n_s2 = self.sbx(s1, s2, this_range[0], this_range[-1], self.x_eta)

@@ -1,2 +1,5 @@
 evocnn2x
 __pycache__/
+evocnnvenv
+save_data
+pops.dat

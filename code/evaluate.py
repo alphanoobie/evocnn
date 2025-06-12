@@ -139,16 +139,6 @@ class Evaluate:
         # Using self.train_data, self.train_label, self.validate_data, self.validate_label
 
         # Train the model
-
-        print("Train data type:", type(self.train_data))
-        print("Train label type:", type(self.train_label))
-        print("Validate data type:", type(self.validate_data))
-        print("Validate label type:", type(self.validate_label))
-        print("Train data shape:", getattr(self.train_data, 'shape', None))
-        print("Train label shape:", getattr(self.train_label, 'shape', None))
-        print("Validate data shape:", getattr(self.validate_data, 'shape', None))
-        print("Validate label shape:", getattr(self.validate_label, 'shape', None))
-
         history = model.fit(
             self.train_data,
             batch_size=self.batch_size,

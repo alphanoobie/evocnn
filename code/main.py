@@ -36,13 +36,13 @@ if __name__ == '__main__':
         os.mkdir('./save_data')
 
     
-    batch_size = 100
+    batch_size = 32
     number_of_channel = 1
     train_data_length = 10000
     validate_data_length = 2000
-    total_generation_number = 50# total generation number
-    pop_size = 50
-    epochs = 10
+    total_generation_number = 2# total generation number
+    pop_size = 2
+    epochs = 5
     eta = 1/20
 
     train_ds = get_train_data(batch_size)
