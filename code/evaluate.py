@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras import layers, models
+from tensorflow.keras import layers, models, optimizers
 import tf_slim as slim
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import init_ops
@@ -120,7 +120,7 @@ class Evaluate:
 
         # Compile (You can modify optimizer and loss based on evolution)
         model.compile(
-            optimizer=tf.keras.optimizers.legacy.Adam(),
+            optimizer=tf.keras.optimizers.Adam(),
             loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
