@@ -78,7 +78,7 @@ class Evaluate:
                     kernel_size=kernel_size,
                     padding='same',
                     activation='relu',
-                    kernel_initializer=tf.keras.initializers.RandomNormal(
+                    kernel_initializer=tf.compat.v1.keras.initializers.RandomNormal(
                         mean=unit.weight_matrix_mean,
                         stddev=unit.weight_matrix_std
                     )
@@ -102,7 +102,7 @@ class Evaluate:
                 dense = layers.Dense(
                     unit.hidden_neuron_num,
                     activation='relu',
-                    kernel_initializer=tf.keras.initializers.RandomNormal(
+                    kernel_initializer=tf.compat.v1.keras.initializers.RandomNormal(
                         mean=unit.weight_matrix_mean,
                         stddev=unit.weight_matrix_std
                     )
@@ -120,7 +120,7 @@ class Evaluate:
 
         # Compile (You can modify optimizer and loss based on evolution)
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(),
+            optimizer=tf.keras.optimizers.legacy.Adam(),
             loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
