@@ -1,7 +1,7 @@
 from population import Population
 from evaluate import Evaluate
 import numpy
-import tensorflow.examples.tutorials.mnist as input_data
+# import tensorflow.examples.tutorials.mnist as input_data
 import tensorflow as tf
 import collections
 from utils import *

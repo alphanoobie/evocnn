@@ -1,91 +1,71 @@
 import tensorflow as tf
-import scipy.io as io
 import numpy as np
-import sklearn.preprocessing as pre
-import os
 
-def get_general_image(path, name, num):
-    data = io.loadmat(path)
-    data = data[name].astype(np.float32)
-    data = np.reshape(data, [num, 28, 28, 1], order='F')
-    return data
-def get_general_label(path, name):
-    label = io.loadmat(path)
-    label = label[name]
-    label = np.squeeze(label.astype(np.int32))
-    return label
+# -------------------------------
+# Load MNIST from TensorFlow
+# -------------------------------
+def load_mnist_data():
+    (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
 
+    # Reshape to [num_samples, 28, 28, 1]
+    train_images = train_images[..., tf.newaxis].astype(np.float32)
+    test_images = test_images[..., tf.newaxis].astype(np.float32)
+
+    # Split validation (last 10k samples)
+    validate_images, validate_labels = train_images[-10000:], train_labels[-10000:]
+    train_images, train_labels = train_images[:-10000], train_labels[:-10000]
+
+    return (train_images, train_labels), (validate_images, validate_labels), (test_images, test_labels)
+
+
+# -------------------------------
+# Replace your original functions
+# -------------------------------
 def get_mnist_train_data():
-    train_images_path = '/am/lido/home/yanan/training_data/rectangles_images/train_images.mat'
-    train_label_path = '/am/lido/home/yanan/training_data/rectangles_images/train_label.mat'
-
-    train_data = get_general_image(train_images_path, 'train_images', 10000)
-    train_label = get_general_label(train_label_path, 'train_label')
-
-
+    (train_data, train_label), _, _ = load_mnist_data()
     return train_data, train_label
 
 
+def get_mnist_validate_data():
+    _, (validate_data, validate_label), _ = load_mnist_data()
+    return validate_data, validate_label
+
+
 def get_mnist_test_data():
-    test_images_path = '/am/lido/home/yanan/training_data/rectangles_images/test_images.mat'
-    test_label_path = '/am/lido/home/yanan/training_data/rectangles_images/test_label.mat'
-
-
-    test_data = get_general_image(test_images_path, 'test_images', 50000)
-    test_label = get_general_label(test_label_path, 'test_label')
-
+    _, _, (test_data, test_label) = load_mnist_data()
     return test_data, test_label
 
 
-def get_mnist_validate_data():
-    validate_images_path = '/am/lido/home/yanan/training_data/rectangles_images/validate_images.mat'
-    validate_label_path = '/am/lido/home/yanan/training_data/rectangles_images/validate_label.mat'
-
-    validate_data = get_general_image(validate_images_path, 'validate_images', 2000)
-    validate_label = get_general_label(validate_label_path, 'validate_label')
-
-    return  validate_data, validate_label
-
-
-def get_standard_train_data(name):
-    data_path = '/am/lido/home/yanan/training_data/back-{}/train_images.npy'.format(name)
-    label_path = '/am/lido/home/yanan/training_data/back-{}/train_label.npy'.format(name)
-    data = np.load(data_path)
-    label = np.load(label_path)
-    return data, label
-
-def get_standard_validate_data(name):
-    data_path = '/am/lido/home/yanan/training_data/back-{}/validate_images.npy'.format(name)
-    label_path = '/am/lido/home/yanan/training_data/back-{}/validate_label.npy'.format(name)
-    data = np.load(data_path)
-    label = np.load(label_path)
-    return data, label
-
-def get_standard_test_data(name):
-    data_path = '/am/lido/home/yanan/training_data/back-{}/test_images.npy'.format(name)
-    label_path = '/am/lido/home/yanan/training_data/back-{}/test_label.npy'.format(name)
-    data = np.load(data_path)
-    label = np.load(label_path)
-    return data, label
-
-
-
+# -------------------------------
+# Leave your batching functions unchanged
+# -------------------------------
 def get_train_data(batch_size):
     t_image, t_label = get_mnist_train_data()
     train_image = tf.cast(t_image, tf.float32)
     train_label = tf.cast(t_label, tf.int32)
-    single_image, single_label  = tf.compat.v1.train.slice_input_producer([train_image, train_label], shuffle=True)
+    single_image, single_label = tf.compat.v1.train.slice_input_producer([train_image, train_label], shuffle=True)
     single_image = tf.image.per_image_standardization(single_image)
-    image_batch, label_batch = tf.compat.v1.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
+    image_batch, label_batch = tf.compat.v1.train.batch(
+        [single_image, single_label],
+        batch_size=batch_size,
+        num_threads=2,
+        capacity=batch_size*3
+    )
     return image_batch, label_batch
+
 
 def get_validate_data(batch_size):
     t_image, t_label = get_mnist_validate_data()
     validate_image = tf.cast(t_image, tf.float32)
     validate_label = tf.cast(t_label, tf.int32)
-    single_image, single_label  = tf.compat.v1.train.slice_input_producer([validate_image, validate_label], shuffle=False)
+    single_image, single_label = tf.compat.v1.train.slice_input_producer([validate_image, validate_label], shuffle=False)
     single_image = tf.image.per_image_standardization(single_image)
-    image_batch, label_batch = tf.compat.v1.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
+    image_batch, label_batch = tf.compat.v1.train.batch(
+        [single_image, single_label],
+        batch_size=batch_size,
+        num_threads=2,
+        capacity=batch_size*3
+    )
     return image_batch, label_batch
 
 
@@ -93,29 +73,27 @@ def get_test_data(batch_size):
     t_image, t_label = get_mnist_test_data()
     test_image = tf.cast(t_image, tf.float32)
     test_label = tf.cast(t_label, tf.int32)
-    single_image, single_label  = tf.compat.v1.train.slice_input_producer([test_image, test_label], shuffle=False)
+    single_image, single_label = tf.compat.v1.train.slice_input_producer([test_image, test_label], shuffle=False)
     single_image = tf.image.per_image_standardization(single_image)
-    image_batch, label_batch = tf.compat.v1.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
+    image_batch, label_batch = tf.compat.v1.train.batch(
+        [single_image, single_label],
+        batch_size=batch_size,
+        num_threads=2,
+        capacity=batch_size*3
+    )
     return image_batch, label_batch
 
-def tf_standalized(data):
-    image = tf.compat.v1.placeholder(tf.float32, shape=[28,28,1])
-    scale_data = tf.image.per_image_standardization(image)
-    data_list = []
-    with tf.compat.v1.Session() as sess:
-        sess.run(tf.compat.v1.global_variables_initializer())
-        data_length = data.shape[0]
-        for i in range(data_length):
-            standard_data = sess.run(scale_data, {image:data[i]})
-            print(i, data_length)
-            data_list.append(standard_data)
-    return np.array(data_list)
 
+if __name__ == '__main__':
+    train_data, train_label = get_mnist_train_data()
+    print("Train:", train_data.shape, train_label.shape)
 
-if __name__ =='__main__':
-    name = 'random'
-    data, label = get_standard_test_data(name)
-    print(data.shape, label.shape, data.dtype, label.dtype)
+    val_data, val_label = get_mnist_validate_data()
+    print("Validation:", val_data.shape, val_label.shape)
+
+    test_data, test_label = get_mnist_test_data()
+    print("Test:", test_data.shape, test_label.shape)
+
 
 
 

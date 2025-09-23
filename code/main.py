@@ -43,8 +43,8 @@ if __name__ == '__main__':
     epochs = 10
     eta = 1/20
     #CUDA1
-    #begin_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
-    restart_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
+    begin_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
+    # restart_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
 
 
 
