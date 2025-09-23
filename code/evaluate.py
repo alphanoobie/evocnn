@@ -104,7 +104,7 @@ class Evaluate:
                         last_unit = indi.get_layer_at(i-1)
                         if last_unit.type != 3: # use the previous setting to calculate this input dimension
                             input_data =  slim.flatten(output_list[-1])
-                            input_dim = input_data.get_shape()[1].value
+                            input_dim = input_data.get_shape().as_list()[1]
                         else: # current input dim should be the number of neurons in the previous hidden layer
                             input_data = output_list[-1]
                             input_dim = last_unit.hidden_neuron_num
