@@ -74,18 +74,18 @@ def get_train_data(batch_size):
     t_image, t_label = get_mnist_train_data()
     train_image = tf.cast(t_image, tf.float32)
     train_label = tf.cast(t_label, tf.int32)
-    single_image, single_label  = tf.train.slice_input_producer([train_image, train_label], shuffle=True)
+    single_image, single_label  = tf.compat.v1.train.slice_input_producer([train_image, train_label], shuffle=True)
     single_image = tf.image.per_image_standardization(single_image)
-    image_batch, label_batch = tf.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
+    image_batch, label_batch = tf.compat.v1.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
     return image_batch, label_batch
 
 def get_validate_data(batch_size):
     t_image, t_label = get_mnist_validate_data()
     validate_image = tf.cast(t_image, tf.float32)
     validate_label = tf.cast(t_label, tf.int32)
-    single_image, single_label  = tf.train.slice_input_producer([validate_image, validate_label], shuffle=False)
+    single_image, single_label  = tf.compat.v1.train.slice_input_producer([validate_image, validate_label], shuffle=False)
     single_image = tf.image.per_image_standardization(single_image)
-    image_batch, label_batch = tf.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
+    image_batch, label_batch = tf.compat.v1.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
     return image_batch, label_batch
 
 
@@ -93,17 +93,17 @@ def get_test_data(batch_size):
     t_image, t_label = get_mnist_test_data()
     test_image = tf.cast(t_image, tf.float32)
     test_label = tf.cast(t_label, tf.int32)
-    single_image, single_label  = tf.train.slice_input_producer([test_image, test_label], shuffle=False)
+    single_image, single_label  = tf.compat.v1.train.slice_input_producer([test_image, test_label], shuffle=False)
     single_image = tf.image.per_image_standardization(single_image)
-    image_batch, label_batch = tf.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
+    image_batch, label_batch = tf.compat.v1.train.batch([single_image, single_label], batch_size=batch_size, num_threads=2, capacity=batch_size*3)
     return image_batch, label_batch
 
 def tf_standalized(data):
-    image = tf.placeholder(tf.float32, shape=[28,28,1])
+    image = tf.compat.v1.placeholder(tf.float32, shape=[28,28,1])
     scale_data = tf.image.per_image_standardization(image)
     data_list = []
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
         data_length = data.shape[0]
         for i in range(data_length):
             standard_data = sess.run(scale_data, {image:data[i]})

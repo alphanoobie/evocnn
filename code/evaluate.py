@@ -34,7 +34,7 @@ class Evaluate:
     '''
     def parse_population(self, gen_no):
         save_dir = os.getcwd() + '/save_data/gen_{:03d}'.format(gen_no)
-        tf.gfile.MakeDirs(save_dir)
+        tf.io.gfile.makedirs(save_dir)
         history_best_score = 0
         for i in range(self.pops.get_pop_size()):
             indi = self.pops.get_individual_at(i)
@@ -54,7 +54,7 @@ class Evaluate:
 
 
     def build_graph(self, indi_index, num_of_input_channel, indi, train_data, train_label, validate_data, validate_label):
-        is_training = tf.placeholder(tf.bool, [])
+        is_training = tf.compat.v1.placeholder(tf.bool, [])
         X = tf.cond(is_training, lambda:train_data, lambda:validate_data)
         y_ = tf.cond(is_training, lambda:train_label, lambda:validate_label)
         true_Y = tf.cast(y_, tf.int64)
@@ -79,17 +79,17 @@ class Evaluate:
                 current_unit = indi.get_layer_at(i)
                 if current_unit.type == 1:
                     name_scope = '{}_conv_{}'.format(name_preffix, i)
-                    with tf.variable_scope(name_scope):
+                    with tf.compat.v1.variable_scope(name_scope):
                         filter_size = [current_unit.filter_width, current_unit.filter_height]
                         mean=current_unit.weight_matrix_mean
                         stddev=current_unit.weight_matrix_std
-                        conv_H = slim.conv2d(output_list[-1], current_unit.feature_map_size, filter_size, weights_initializer=tf.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
+                        conv_H = slim.conv2d(output_list[-1], current_unit.feature_map_size, filter_size, weights_initializer=tf.compat.v1.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
                         output_list.append(conv_H)
                         # update for next usage
                         last_output_feature_map_size = current_unit.feature_map_size
                         num_connections += current_unit.feature_map_size*current_unit.filter_width*current_unit.filter_height+current_unit.feature_map_size
                 elif current_unit.type == 2:
-                    with tf.variable_scope('{}_pool_{}'.format(name_preffix, i)):
+                    with tf.compat.v1.variable_scope('{}_pool_{}'.format(name_preffix, i)):
                         kernel_size = [current_unit.kernel_width, current_unit.kernel_height]
                         if current_unit.kernel_type < 0.5:
                             pool_H = slim.max_pool2d(output_list[-1], kernel_size=kernel_size, stride=kernel_size, padding='SAME')
@@ -100,7 +100,7 @@ class Evaluate:
                         last_output_feature_map_size = last_output_feature_map_size
                         num_connections += last_output_feature_map_size
                 elif current_unit.type == 3:
-                    with tf.variable_scope('{}_full_{}'.format(name_preffix, i)):
+                    with tf.compat.v1.variable_scope('{}_full_{}'.format(name_preffix, i)):
                         last_unit = indi.get_layer_at(i-1)
                         if last_unit.type != 3: # use the previous setting to calculate this input dimension
                             input_data =  slim.flatten(output_list[-1])
@@ -111,21 +111,21 @@ class Evaluate:
                         mean=current_unit.weight_matrix_mean
                         stddev=current_unit.weight_matrix_std
                         if i < num_of_units - 1:
-                            full_H = slim.fully_connected(input_data, num_outputs=current_unit.hidden_neuron_num, weights_initializer=tf.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
+                            full_H = slim.fully_connected(input_data, num_outputs=current_unit.hidden_neuron_num, weights_initializer=tf.compat.v1.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
                         else:
-                            full_H = slim.fully_connected(input_data, num_outputs=current_unit.hidden_neuron_num, activation_fn=None, weights_initializer=tf.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
+                            full_H = slim.fully_connected(input_data, num_outputs=current_unit.hidden_neuron_num, activation_fn=None, weights_initializer=tf.compat.v1.truncated_normal_initializer(mean=mean, stddev=stddev), biases_initializer=init_ops.constant_initializer(0.1, dtype=tf.float32))
                         output_list.append(full_H)
                         num_connections += input_dim*current_unit.hidden_neuron_num + current_unit.hidden_neuron_num
                 else:
                     raise NameError('No unit with type value {}'.format(current_unit.type))
 
 
-            with tf.name_scope('{}_loss'.format(name_preffix)):
+            with tf.compat.v1.name_scope('{}_loss'.format(name_preffix)):
                 logits = output_list[-1]
                 #regularization_loss = tf.add_n(tf.losses.get_regularization_losses())
                 cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_Y, logits=logits))
-            with tf.name_scope('{}_train'.format(name_preffix)):
-                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.compat.v1.name_scope('{}_train'.format(name_preffix)):
+                update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
                 if update_ops:
                     updates = tf.group(*update_ops)
                     cross_entropy = control_flow_ops.with_dependencies([updates], cross_entropy)
@@ -133,33 +133,33 @@ class Evaluate:
                 #self.train_data_length//self.batch_size
 #                 lr = tf.train.exponential_decay(0.1, step, 550*30, 0.9, staircase=True)
 #                 optimizer = tf.train.GradientDescentOptimizer(lr)
-                optimizer = tf.train.AdamOptimizer()
+                optimizer = tf.compat.v1.train.AdamOptimizer()
                 train_op = slim.learning.create_train_op(cross_entropy, optimizer)
-            with tf.name_scope('{}_test'.format(name_preffix)):
+            with tf.compat.v1.name_scope('{}_test'.format(name_preffix)):
                 accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(logits, 1), true_Y), tf.float32))
 
             tf.summary.scalar('loss', cross_entropy)
             tf.summary.scalar('accuracy', accuracy)
-            merge_summary = tf.summary.merge_all()
+            merge_summary = tf.compat.v1.summary.merge_all()
 
             return is_training, train_op, accuracy, cross_entropy, num_connections, merge_summary
 
 
 
     def parse_individual(self, indi, num_of_input_channel, indi_index, save_path, history_best_score):
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         train_data, train_label = get_data.get_train_data(self.batch_size)
         validate_data, validate_label = get_data.get_validate_data(self.batch_size)
         is_training, train_op, accuracy, cross_entropy, num_connections, merge_summary = self.build_graph(indi_index, num_of_input_channel, indi, train_data, train_label, validate_data, validate_label)
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
+        with tf.compat.v1.Session() as sess:
+            sess.run(tf.compat.v1.global_variables_initializer())
             steps_in_each_epoch = (self.train_data_length//self.batch_size)
             total_steps = int(self.epochs*steps_in_each_epoch)
             coord = tf.train.Coordinator()
             #threads = tf.train.start_queue_runners(sess, coord)
             try:
                 threads = []
-                for qr in tf.get_collection(tf.GraphKeys.QUEUE_RUNNERS):
+                for qr in tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.QUEUE_RUNNERS):
                     threads.extend(qr.create_threads(sess, coord=coord, daemon=True, start=True))
                 for i in range(total_steps):
                     if coord.should_stop():
@@ -193,7 +193,7 @@ class Evaluate:
                     save_mean_acc = tf.Variable(-1, dtype=tf.float32, name='save_mean')
                     save_mean_acc_op = save_mean_acc.assign(mean_acc)
                     sess.run(save_mean_acc_op)
-                    saver0 = tf.train.Saver()
+                    saver0 = tf.compat.v1.train.Saver()
                     saver0.save(sess, save_path +'/model')
                     saver0.export_meta_graph(save_path +'/model.meta')
                     history_best_score = mean_acc

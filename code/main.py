@@ -28,13 +28,13 @@ def restart_evolve(m_prob, m_eta, x_prob, x_eta, pop_size, train_data, train_lab
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    tf.logging.set_verbosity(tf.logging.ERROR)
-    if not tf.gfile.Exists('./save_data'):
-        tf.gfile.MkDir('./save_data')
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    if not tf.io.gfile.exists('./save_data'):
+        tf.io.gfile.mkdir('./save_data')
 
     #train_data, validation_data, test_data = get_mnist_data()
     batch_size = 100
-    tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
     number_of_channel = 1
     train_data_length = 10000
     validate_data_length = 2000
