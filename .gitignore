@@ -1,1 +1,3 @@
 evocnnvenv
+__pycache__/
+save_data/
