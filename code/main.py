@@ -2,6 +2,7 @@ from evolve import Evolve_CNN
 from utils import *
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
+from get_data import get_mnist_train_data, get_mnist_validate_data
 
 def begin_evolve(m_prob, m_eta, x_prob, x_eta, pop_size, train_data, train_label, validate_data, validation_label, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta):
     cnn = Evolve_CNN(m_prob, m_eta, x_prob, x_eta, pop_size, train_data, train_label, validate_data, validation_label, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, eta)
@@ -34,6 +35,8 @@ if __name__ == '__main__':
         tf.io.gfile.mkdir('./save_data')
 
     #train_data, validation_data, test_data = get_mnist_data()
+    train_data, train_label = get_mnist_train_data()
+    validate_data, validate_label = get_mnist_validate_data()
     batch_size = 100
     tf.compat.v1.reset_default_graph()
     number_of_channel = 1
@@ -44,7 +47,7 @@ if __name__ == '__main__':
     epochs = 10
     eta = 1/20
     #CUDA1
-    begin_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
+    begin_evolve(0.9, 0.05, 0.2, 0.05, pop_size, train_data, train_label, validate_data, validate_label, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
     # restart_evolve(0.9, 0.05, 0.2, 0.05, pop_size, None, None, None, None, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta)
 
 
