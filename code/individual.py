@@ -81,7 +81,7 @@ class Individual:
                     new_layers.append(self._generate_new_layer(current.type, self.get_layer_size()))
                     new_layers.append(current)
                 elif op in [1, 2]:
-                    new_layers.append(self._mutate_layer(current))
+                    new_layers.append(self._mutate_layer(current, m_eta))
             else:
                 new_layers.append(current)
 
@@ -102,13 +102,13 @@ class Individual:
             return 2  # delete (not implemented)
         return 0  # add
 
-    def _mutate_layer(self, layer):
+    def _mutate_layer(self, layer, eta):
         if layer.type == 1:
-            return self._mutate_conv(layer)
+            return self._mutate_conv(layer, eta)
         elif layer.type == 2:
-            return self._mutate_pool(layer)
+            return self._mutate_pool(layer, eta)
         elif layer.type == 3:
-            return self._mutate_full(layer)
+            return self._mutate_full(layer, eta)
         raise ValueError("Unknown layer type")
 
     # Mutation logic for each layer type
