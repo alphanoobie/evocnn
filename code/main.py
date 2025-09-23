@@ -1,6 +1,7 @@
 from evolve import Evolve_CNN
 from utils import *
 import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 def begin_evolve(m_prob, m_eta, x_prob, x_eta, pop_size, train_data, train_label, validate_data, validation_label, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, total_generation_number, eta):
     cnn = Evolve_CNN(m_prob, m_eta, x_prob, x_eta, pop_size, train_data, train_label, validate_data, validation_label, number_of_channel, epochs, batch_size, train_data_length, validate_data_length, eta)
