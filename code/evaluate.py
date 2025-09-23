@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tf_slim as slim
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import init_ops
 from population import Population
@@ -194,7 +194,7 @@ class Evaluate:
                     save_mean_acc_op = save_mean_acc.assign(mean_acc)
                     sess.run(save_mean_acc_op)
                     saver0 = tf.compat.v1.train.Saver()
-                    saver0.save(sess, save_path +'/model')
+                    saver0.save(sess, save_path +'/model', save_format='h5')
                     saver0.export_meta_graph(save_path +'/model.meta')
                     history_best_score = mean_acc
 
