@@ -208,7 +208,7 @@ class Evaluate:
                     save_mean_acc_op = save_mean_acc.assign(mean_acc)
                     sess.run(save_mean_acc_op)
                     saver0 = tf.compat.v1.train.Saver()
-                    saver0.save(sess, os.path.join(save_path, 'model'), save_format='h5')
+                    saver0.save(sess, os.path.join(save_path, 'model'))
                     saver0.export_meta_graph(os.path.join(save_path, 'model.meta'))
                     history_best_score = mean_acc
 
