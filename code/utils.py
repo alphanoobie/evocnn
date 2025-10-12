@@ -20,11 +20,14 @@ def load_population():
         data = pickle.load(file_handler)
     return data['gen_no'], data['pops'],data['create_time']
 
-def save_offspring(gen_no, pops):
-    data = {'gen_no':gen_no, 'pops':pops, 'create_time':strftime("%Y-%m-%d %H:%M:%S", gmtime())}
-    path = os.getcwd() + '/offsprings_data/gen_{}.dat'.format(gen_no)
+
+def save_offspring(gen_no, offspring_pops):
+    path = f"./offsprings_data/gen_{gen_no}.dat"
+    os.makedirs(os.path.dirname(path), exist_ok=True)  # ensure dir exists
     with open(path, 'wb') as file_handler:
-        pickle.dump(data, file_handler)
+        import pickle
+        pickle.dump(offspring_pops, file_handler)
+
 
 def load_save_log_data():
     file_name = '/am/lido/home/yanan/eclipse-workspace/Ver3/pops.dat'
