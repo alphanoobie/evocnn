@@ -51,7 +51,7 @@ class Evaluate:
             history_best_score = new_best
 
             list_save_path = os.path.join(save_dir, 'pop.txt')
-            utils.save_append_individual(str(indi), list_save_path)
+            utils.save_append_individual(str(indi), indi.mean, list_save_path)
 
         list_save_path = os.path.join(save_dir, 'pop.dat')
         with open(list_save_path, 'wb') as file_handler:

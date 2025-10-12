@@ -38,9 +38,11 @@ def load_save_log_data():
         for i in range(len(pops)):
             print(pops[i])
 
-def save_append_individual(indi, file_path):
+def save_append_individual(indi, acc, file_path):
     with open(file_path, 'a') as myfile:
         myfile.write(indi)
+        myfile.write(" ")
+        myfile.write(str(acc))
         myfile.write("\n")
 def randint(low, high):
     return np.random.random_integers(low, high-1)
