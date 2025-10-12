@@ -30,7 +30,7 @@ def save_offspring(gen_no, offspring_pops):
 
 
 def load_save_log_data():
-    file_name = '/am/lido/home/yanan/eclipse-workspace/Ver3/pops.dat'
+    file_name = '/home/alphanoobie/programs/evocnn/code/pops.dat'
     with open(file_name, 'br') as file_h:
         data = pickle.load(file_h)
         print(data)
