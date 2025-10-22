@@ -42,6 +42,7 @@ class Evaluate:
 
         for i in range(self.pops.get_pop_size()):
             indi = self.pops.get_individual_at(i)
+            indi.ensure_optimizer_initialized()
             rs_mean, rs_std, num_connections, new_best = self.parse_individual(
                 indi, self.number_of_channel, i, save_dir, history_best_score, num_classes
             )
@@ -57,8 +58,21 @@ class Evaluate:
         with open(list_save_path, 'wb') as file_handler:
             pickle.dump(self.pops, file_handler)
 
+    def _create_optimizer(self, indi):
+        indi.ensure_optimizer_initialized()
+        optimizer_name = getattr(indi, 'optimizer', 'adam')
+        optimizer_name = optimizer_name.lower()
+        if optimizer_name == 'sgd':
+            return tf.compat.v1.train.GradientDescentOptimizer(learning_rate=0.01)
+        if optimizer_name == 'rmsprop':
+            return tf.compat.v1.train.RMSPropOptimizer(learning_rate=0.001, decay=0.9)
+        if optimizer_name == 'adagrad':
+            return tf.compat.v1.train.AdagradOptimizer(learning_rate=0.01)
+        return tf.compat.v1.train.AdamOptimizer(learning_rate=0.001)
+
     def build_graph(self, indi_index, num_of_input_channel, indi,
                     train_data, train_label, validate_data, validate_label, num_classes):
+        indi.ensure_optimizer_initialized()
         is_training = tf.compat.v1.placeholder(tf.bool, [])
         X = tf.cond(is_training, lambda: train_data, lambda: validate_data)
         y_ = tf.cond(is_training, lambda: train_label, lambda: validate_label)
@@ -140,7 +154,7 @@ class Evaluate:
                 updates = tf.group(*update_ops)
                 cross_entropy = control_flow_ops.with_dependencies([updates], cross_entropy)
 
-            optimizer = tf.compat.v1.train.AdamOptimizer()
+            optimizer = self._create_optimizer(indi)
             train_op = slim.learning.create_train_op(cross_entropy, optimizer)
 
             accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(logits, 1), true_Y), tf.float32))

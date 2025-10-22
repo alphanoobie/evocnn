@@ -20,8 +20,10 @@ class Individual:
         self.filter_size_range = [2, 20]
         self.pool_kernel_size_range = [1, 2]
         self.hidden_neurons_range = [1000, 2000]
-        self.mean_range = [-1,1]
-        self.std_range = [0,1]
+        self.mean_range = [-1, 1]
+        self.std_range = [0, 1]
+        self.optimizer_choices = ('adam', 'rmsprop', 'sgd')
+        self.optimizer = self.random_optimizer()
 
     def clear_state_info(self):
         self.complxity = 0
@@ -32,6 +34,7 @@ class Individual:
     initialize a simle CNN network including one convolutional layer, one pooling layer, and one full connection layer
     '''
     def initialize(self):
+        self.ensure_optimizer_initialized()
         self.indi = self.init_one_individual()
 
     def init_one_individual(self):
@@ -70,6 +73,7 @@ class Individual:
         return np.random.randint(self.hidden_neurons_range[0], self.hidden_neurons_range[1])
 
     def mutation(self):
+        self.ensure_optimizer_initialized()
         if flip(self.m_prob):
             #for the units
             unit_list = []
@@ -103,6 +107,8 @@ class Individual:
             if unit_list[0].type != 1:
                 unit_list.insert(0, self.add_a_random_conv_layer())
             self.indi = unit_list
+        if flip(self.m_prob):
+            self.optimizer = self.mutate_optimizer()
 
 
     def mutation_a_unit(self, unit, eta):
@@ -162,6 +168,21 @@ class Individual:
             return 2
         else:
             return 0
+
+    def random_optimizer(self):
+        return random.choice(self.optimizer_choices)
+
+    def mutate_optimizer(self):
+        candidates = [opt for opt in self.optimizer_choices if opt != self.optimizer]
+        if not candidates:
+            return self.optimizer
+        return random.choice(candidates)
+
+    def ensure_optimizer_initialized(self):
+        if not hasattr(self, 'optimizer_choices') or not isinstance(self.optimizer_choices, (tuple, list)):
+            self.optimizer_choices = ('adam', 'rmsprop', 'sgd')
+        if not hasattr(self, 'optimizer'):
+            self.optimizer = self.random_optimizer()
 
     def add_a_common_full_layer(self):
         mean = self.init_mean()
@@ -226,10 +247,9 @@ class Individual:
         x = min(max(x, xl), xu)
         return x
 
-
-
-
-
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.ensure_optimizer_initialized()
 
     def __str__(self):
 
@@ -238,6 +258,7 @@ class Individual:
         str_.append('Length:{}, Num:{}'.format(self.get_layer_size(), self.complxity))
         str_.append('Mean:{:.2f}'.format(self.mean))
         str_.append('Std:{:.2f}'.format(self.std))
+        str_.append('Optimizer:{}'.format(self.optimizer))
 
         for i in range(self.get_layer_size()):
             unit = self.get_layer_at(i)
@@ -255,5 +276,3 @@ class Individual:
 if __name__ =='__main__':
     ind = Individual()
     print(ind.randint(1,10))
-
-

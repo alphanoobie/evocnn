@@ -91,6 +91,8 @@ class Evolve_CNN:
         p2 = copy.deepcopy(p2)
         p1.clear_state_info()
         p2.clear_state_info()
+        p1.ensure_optimizer_initialized()
+        p2.ensure_optimizer_initialized()
         #for different unit, we define two list, one to save their index and the other one save unit
         p1_conv_index_list = []
         p1_conv_layer_list = []
@@ -266,6 +268,14 @@ class Evolve_CNN:
             p2_units[p2_full_index_list[i]] = p2_full_layer_list[i]
         p2.indi = p2_units
 
+        if flip(self.x_prob):
+            p1.optimizer, p2.optimizer = p2.optimizer, p1.optimizer
+        else:
+            if flip(0.5):
+                p1.optimizer = p1.mutate_optimizer()
+            if flip(0.5):
+                p2.optimizer = p2.mutate_optimizer()
+
         return p1, p2
 
 
@@ -353,6 +363,5 @@ if __name__ == '__main__':
     new_p2.mutation()
     print('nnp1->', new_p1)
     print('nnp2->', new_p2)
-
 
 
